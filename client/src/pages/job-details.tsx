@@ -104,6 +104,81 @@ export default function JobDetailsPage() {
     );
   }
 
+  const handleGenerateInvoice = async () => {
+    try {
+      if (!job) return;
+
+      const items = [
+        ...job.services.map(s => ({ ...s, type: "Service" })),
+        ...job.ppfs.map(p => ({ ...p, type: "PPF" })),
+        ...job.accessories.map(a => ({ ...a, type: "Accessory" }))
+      ];
+
+      const businesses = Array.from(new Set(items.map(item => item.business || "Auto Gamma")));
+      
+      for (const business of businesses) {
+        const businessItems = items.filter(item => (item.business || "Auto Gamma") === business);
+        const subtotal = businessItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
+        
+        // Use business-specific discount
+        const businessDiscount = business === "Auto Gamma" ? 
+          (job.autoGammaDiscount || 0) : 
+          (job.agnxDiscount || 0);
+
+        const businessLabor = job.laborBusiness === business ? Number(job.laborCharge || 0) : 0;
+        
+        const gstPercentage = Number(job.gst || 0);
+        const totalBeforeGst = subtotal + businessLabor - businessDiscount;
+        const gstAmount = (totalBeforeGst * gstPercentage) / 100;
+
+        const invoiceData = {
+          jobCardId: job.id,
+          business,
+          customerName: job.customerName,
+          phoneNumber: job.phoneNumber,
+          emailAddress: job.emailAddress,
+          vehicleMake: job.make,
+          vehicleModel: job.model,
+          vehicleYear: job.year,
+          licensePlate: job.licensePlate,
+          vehicleType: job.vehicleType,
+          items: businessItems.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity || 1,
+            type: item.type,
+            category: (item as any).category,
+            warranty: (item as any).warranty,
+            technician: item.technician
+          })),
+          subtotal: subtotal + businessLabor,
+          discount: businessDiscount,
+          laborCharge: businessLabor,
+          gstPercentage,
+          gstAmount,
+          totalAmount: totalBeforeGst + gstAmount,
+          date: new Date().toISOString(),
+          isPaid: job.isPaid,
+          payments: job.isPaid ? job.payments : []
+        };
+
+        await apiRequest("POST", "/api/invoices", invoiceData);
+      }
+
+      toast({
+        title: "Success",
+        description: "Invoices generated successfully",
+      });
+      setLocation("/invoice");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate invoices",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "Pending":
@@ -288,11 +363,19 @@ export default function JobDetailsPage() {
 
           <div className="space-y-6">
             <Card className="border-slate-200 overflow-hidden">
-              <CardHeader className="bg-slate-50/50 border-b py-3 px-6">
+              <CardHeader className="bg-slate-50/50 border-b py-3 px-6 flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                   <IndianRupee className="h-5 w-5 text-red-600" />
                   <CardTitle className="text-base font-bold">Pricing</CardTitle>
                 </div>
+                <Button 
+                  onClick={handleGenerateInvoice}
+                  variant="outline"
+                  size="sm"
+                  className="bg-red-600 text-white hover:bg-red-700 hover:text-white border-none font-bold text-xs flex items-center gap-1"
+                >
+                  <FileText className="h-3 w-3" /> Generate Invoice
+                </Button>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">

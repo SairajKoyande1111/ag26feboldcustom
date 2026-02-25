@@ -780,7 +780,69 @@ export default function AddJobPage() {
       agnxDiscount: agnxDiscount,
       gst: Number(pendingFormData.gst),
     };
-    createJobMutation.mutate(formattedData);
+
+    // Fix: Pass the split discounts to invoice generation
+    const generateInvoices = async (jobId: string) => {
+      const items = [
+        ...formattedData.services.map((s: any) => ({ ...s, type: "Service" })),
+        ...formattedData.ppfs.map((p: any) => ({ ...p, type: "PPF" })),
+        ...formattedData.accessories.map((a: any) => ({ ...a, type: "Accessory" }))
+      ];
+
+      const businesses = Array.from(new Set(items.map(item => item.business || "Auto Gamma")));
+      
+      for (const business of businesses) {
+        const businessItems = items.filter(item => (item.business || "Auto Gamma") === business);
+        const subtotal = businessItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
+        
+        const businessDiscount = business === "Auto Gamma" ? autoGammaDiscount : agnxDiscount;
+        const businessLabor = laborBusiness === business ? laborCharge : 0;
+        
+        const gstPercentage = formattedData.gst;
+        const totalBeforeGst = subtotal + businessLabor - businessDiscount;
+        const gstAmount = (totalBeforeGst * gstPercentage) / 100;
+
+        const invoiceData = {
+          jobCardId: jobId,
+          business,
+          customerName: formattedData.customerName,
+          phoneNumber: formattedData.phoneNumber,
+          emailAddress: formattedData.emailAddress,
+          vehicleMake: formattedData.make,
+          vehicleModel: formattedData.model,
+          vehicleYear: formattedData.year,
+          licensePlate: formattedData.licensePlate,
+          vehicleType: formattedData.vehicleType,
+          items: businessItems.map(item => ({
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity || 1,
+            type: item.type,
+            category: item.category,
+            warranty: item.warranty,
+            technician: item.technician
+          })),
+          subtotal: subtotal + businessLabor,
+          discount: businessDiscount,
+          laborCharge: businessLabor,
+          gstPercentage,
+          gstAmount,
+          totalAmount: totalBeforeGst + gstAmount,
+          date: new Date().toISOString(),
+          isPaid: markAsPaid,
+          payments: markAsPaid ? formattedData.payments : []
+        };
+
+        await apiRequest("POST", "/api/invoices", invoiceData);
+      }
+    };
+
+    createJobMutation.mutate(formattedData, {
+      onSuccess: (data) => {
+        generateInvoices(data.id || jobId);
+        setLocation("/invoice");
+      }
+    });
     setShowBusinessDialog(false);
   };
 
