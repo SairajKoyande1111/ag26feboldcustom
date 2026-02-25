@@ -57,7 +57,7 @@ import {
     accessories: z.array(z.any()).default([]),
     laborCharge: z.coerce.number().default(0),
     discount: z.coerce.number().default(0),
-    gst: z.coerce.number().default(18),
+    gst: z.coerce.number().default(0),
     serviceNotes: z.string().optional().or(z.literal("")),
     status: z.string().optional(),
     date: z.string().optional(),
@@ -107,7 +107,7 @@ export default function AddJobPage() {
       accessories: [],
       laborCharge: 0,
       discount: 0,
-      gst: 18,
+      gst: 0,
       serviceNotes: "",
     },
   });
@@ -274,7 +274,7 @@ export default function AddJobPage() {
         })),
         laborCharge: jobToEdit.laborCharge || 0,
         discount: jobToEdit.discount || 0,
-        gst: jobToEdit.gst || 18,
+        gst: jobToEdit.gst ?? 0,
         serviceNotes: jobToEdit.serviceNotes || "",
       });
     } else if (!jobId && !prefillPhone) {
@@ -297,7 +297,7 @@ export default function AddJobPage() {
         accessories: [],
         laborCharge: 0,
         discount: 0,
-        gst: 18,
+        gst: 0,
         serviceNotes: "",
       });
     }
@@ -1320,7 +1320,7 @@ export default function AddJobPage() {
                             type="text" 
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            value={field.value === 0 ? "" : field.value} 
+                            value={field.value} 
                             onChange={e => {
                               const val = e.target.value.replace(/\D/g, "");
                               field.onChange(val === "" ? 0 : parseInt(val));
@@ -1344,7 +1344,7 @@ export default function AddJobPage() {
                             type="text" 
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            value={field.value === 0 ? "" : field.value} 
+                            value={field.value} 
                             onChange={e => {
                               const val = e.target.value.replace(/\D/g, "");
                               field.onChange(val === "" ? 0 : parseInt(val));
@@ -1368,7 +1368,7 @@ export default function AddJobPage() {
                             type="text" 
                             inputMode="numeric"
                             pattern="[0-9]*"
-                            value={field.value === 0 ? "" : field.value} 
+                            value={field.value} 
                             onChange={e => {
                               const val = e.target.value.replace(/\D/g, "");
                               field.onChange(val === "" ? 0 : parseInt(val));

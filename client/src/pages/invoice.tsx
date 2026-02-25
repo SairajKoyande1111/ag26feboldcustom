@@ -148,7 +148,7 @@ function InvoiceItemDetails({ item }: { item: InvoiceItem }) {
 
 function PrintableInvoice({ invoice }: { invoice: Invoice }) {
   const businessInfo = BUSINESS_INFO[invoice.business];
-  const gstPercentage = invoice.gstPercentage || 18;
+  const gstPercentage = invoice.gstPercentage ?? 0;
   const halfGst = gstPercentage / 2;
   const discount = invoice.discount || 0;
   const laborCharge = invoice.laborCharge || 0;
@@ -290,7 +290,7 @@ function PrintableInvoice({ invoice }: { invoice: Invoice }) {
 
           {(() => {
             const subtotalWithLabor = invoice.subtotal + laborCharge - discount;
-            const gstRate = invoice.gstPercentage || 18;
+            const gstRate = invoice.gstPercentage ?? 0;
             const basePrice = subtotalWithLabor / (1 + gstRate / 100);
             const totalGst = subtotalWithLabor - basePrice;
             const halfGstAmount = totalGst / 2;
