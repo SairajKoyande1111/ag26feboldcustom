@@ -1091,14 +1091,25 @@ export class MongoStorage implements IStorage {
       });
       
       // Accessories with category
-      j.accessories?.forEach(a => {
+      j.accessories?.forEach(async (a) => {
         if ((a as any).business === biz) {
+          const accId = (a as any).accessoryId || (a as any).id;
+          let categoryName = (a as any).category || accId;
+
+          // Attempt to resolve category name from AccessoryMaster if it looks like an ID
+          if (accId && mongoose.Types.ObjectId.isValid(accId)) {
+            const accessory = await AccessoryMasterModel.findById(accId);
+            if (accessory) {
+              categoryName = accessory.category;
+            }
+          }
+
           bizItems.push({ 
             name: a.name, 
             price: a.price, 
             quantity: (a as any).quantity || 1, 
             type: "Accessory",
-            category: (a as any).accessoryId || (a as any).id
+            category: categoryName
           });
         }
       });

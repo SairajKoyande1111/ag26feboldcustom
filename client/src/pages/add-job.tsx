@@ -602,6 +602,7 @@ export default function AddJobPage() {
         const currentAccessories = [...form.getValues("accessories")];
         currentAccessories[existingIndex] = {
           ...currentAccessories[existingIndex],
+          category: a.category, // Ensure category name is passed
           quantity: (Number(currentAccessories[existingIndex].quantity) || 0) + accessoryQty
         };
         form.setValue("accessories", currentAccessories);
@@ -610,6 +611,7 @@ export default function AddJobPage() {
           accessoryId: a.id!, 
           id: a.id!,
           name: a.name, 
+          category: a.category, // Ensure category name is passed
           price: a.price,
           quantity: accessoryQty 
         } as any);
