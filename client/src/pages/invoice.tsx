@@ -259,7 +259,7 @@ function PrintableInvoice({ invoice }: { invoice: Invoice }) {
         <div className="w-full max-w-sm space-y-2 bg-slate-50 p-4 rounded-lg">
           <div className="flex justify-between text-slate-600 pb-2 border-b border-slate-200">
             <span className="font-medium">Base Amount</span>
-            <span className="font-bold">₹{invoice.subtotal.toLocaleString()}</span>
+            <span className="font-bold">₹{(invoice.subtotal - laborCharge).toLocaleString()}</span>
           </div>
 
           {laborCharge > 0 && (
@@ -278,11 +278,11 @@ function PrintableInvoice({ invoice }: { invoice: Invoice }) {
 
           <div className="flex justify-between text-slate-600 pb-2 border-b border-slate-200">
             <span className="font-medium">SubTotal</span>
-            <span className="font-bold">₹{(invoice.subtotal + laborCharge - discount).toLocaleString()}</span>
+            <span className="font-bold">₹{(invoice.subtotal - discount).toLocaleString()}</span>
           </div>
 
           {(() => {
-            const subtotalWithLabor = invoice.subtotal + laborCharge - discount;
+            const subtotalWithLabor = invoice.subtotal - discount;
             const gstRate = invoice.gstPercentage ?? 0;
             const basePrice = subtotalWithLabor / (1 + gstRate / 100);
             const totalGst = subtotalWithLabor - basePrice;
@@ -305,7 +305,7 @@ function PrintableInvoice({ invoice }: { invoice: Invoice }) {
 
           <div className="flex justify-between items-center pt-2 text-xl font-black text-red-600">
             <span className="uppercase tracking-tighter">Grand Total</span>
-            <span>₹{(invoice.subtotal + laborCharge - discount).toLocaleString()}</span>
+            <span>₹{(invoice.subtotal - discount).toLocaleString()}</span>
           </div>
         </div>
       </div>
