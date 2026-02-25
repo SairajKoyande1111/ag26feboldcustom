@@ -681,7 +681,8 @@ export class MongoStorage implements IStorage {
         id: a.id || a._id?.toString() || a.accessoryId,
         accessoryId: a.accessoryId || a.id || a._id?.toString(),
         name: a.name || a.accessoryName || "Unnamed Accessory",
-        price: a.price || 0
+        price: a.price || 0,
+        quantity: a.quantity || 1
       })) || [],
       vehicleType: (j as any).vehicleType
     } as JobCard;
@@ -711,7 +712,8 @@ export class MongoStorage implements IStorage {
         id: a.id || a._id?.toString() || a.accessoryId,
         accessoryId: a.accessoryId || a.id || a._id?.toString(),
         name: a.name || a.accessoryName || "Unnamed Accessory",
-        price: a.price || 0
+        price: a.price || 0,
+        quantity: a.quantity || 1
       })) || [],
       vehicleType: (j as any).vehicleType
     })) as JobCard[];
@@ -756,17 +758,18 @@ export class MongoStorage implements IStorage {
     });
     await j.save();
 
-    // Deduct Accessory stock
+    // Deduct accessory stock
     if (j.accessories && j.accessories.length > 0) {
       for (const item of (j.accessories as any[])) {
         const accId = item.accessoryId || item.id || item._id;
-        if (accId) {
+        if (accId && accId !== "undefined") {
           const accessory = await AccessoryMasterModel.findById(accId);
           if (accessory) {
-            const qtyToDeduct = item.quantity || 1;
-            accessory.quantity -= qtyToDeduct;
-            console.log(`[CREATE JOB CARD] Deducting ${qtyToDeduct} from ${accessory.name}. New stock: ${accessory.quantity}`);
-            await accessory.save();
+            const qtyToDeduct = Number(item.quantity || 1);
+            const currentStock = Number(accessory.quantity || 0);
+            const newQty = Math.max(0, currentStock - qtyToDeduct);
+            console.log(`[CREATE JOB CARD] Deducting ${qtyToDeduct} from ${accessory.name}. Old stock: ${currentStock}, New stock: ${newQty}`);
+            await AccessoryMasterModel.findByIdAndUpdate(accessory._id, { quantity: newQty });
           }
         }
       }
@@ -807,17 +810,18 @@ export class MongoStorage implements IStorage {
         }
       });
 
-      j.accessories?.forEach((a: any) => {
-        if (a.business === biz) {
-          bizItems.push({
-            name: a.name,
-            price: a.price,
-            quantity: a.quantity || 1,
-            type: "Accessory",
-            category: a.category
-          });
-        }
-      });
+        // Accessories with category
+        j.accessories?.forEach((a: any) => {
+          if (a.business === biz) {
+            bizItems.push({
+              name: a.name,
+              price: a.price,
+              quantity: a.quantity || 1,
+              type: "Accessory",
+              category: a.accessoryId || a.id
+            });
+          }
+        });
 
       if ((j as any).laborBusiness === biz && j.laborCharge > 0) {
         bizLaborCharge = j.laborCharge;
@@ -1124,7 +1128,7 @@ export class MongoStorage implements IStorage {
             price: a.price, 
             quantity: (a as any).quantity || 1, 
             type: "Accessory",
-            category: (a as any).category
+            category: (a as any).accessoryId || (a as any).id
           });
         }
       });
@@ -1546,7 +1550,7 @@ export class MongoStorage implements IStorage {
                     return {
                       ...item,
                       category: item.category || matchingAccessory.category,
-                      quantity: item.quantity || matchingAccessory.quantity,
+                      quantity: item.quantity || matchingAccessory.quantity || item.quantity || 1,
                     };
                   }
                 }
@@ -1622,7 +1626,7 @@ export class MongoStorage implements IStorage {
                     return {
                       ...item,
                       category: item.category || matchingAccessory.category,
-                      quantity: item.quantity || matchingAccessory.quantity,
+                      quantity: item.quantity || matchingAccessory.quantity || item.quantity || 1,
                     };
                   }
                 }

@@ -268,16 +268,16 @@ export default function AddJobPage() {
           }
           return acc;
         }, []),
-        accessories: (jobToEdit.accessories || []).map(a => {
-          const accId = (a as any).accessoryId || (a as any).id || (a as any)._id;
-          return {
-            accessoryId: String(accId),
-            id: String(accId),
-            name: a.name,
-            price: a.price,
-            quantity: a.quantity || 1
-          };
-        }),
+          accessories: (jobToEdit.accessories || []).map(a => {
+            const accId = (a as any).accessoryId || (a as any).id || (a as any)._id;
+            return {
+              accessoryId: String(accId),
+              id: String(accId),
+              name: a.name,
+              price: a.price,
+              quantity: a.quantity || 1
+            };
+          }),
         laborCharge: jobToEdit.laborCharge || 0,
         discount: jobToEdit.discount || 0,
         gst: jobToEdit.gst ?? 0,
@@ -617,7 +617,7 @@ export default function AddJobPage() {
         const itemPrice = Number(curr.price || 0);
         const itemQty = Number(curr.quantity || 1);
         return acc + (itemPrice * itemQty);
-      }, 0) + Number(data.laborCharge || 0) - Number(data.discount || 0);
+      }, 0) + (Number(data.laborCharge) || 0) - (Number(data.discount) || 0);
       const totalEstimatedCost = subtotal;
       
       const payload = {
@@ -1442,7 +1442,7 @@ export default function AddJobPage() {
                         <div className="flex justify-between items-center text-sm font-medium">
                           <span className="text-slate-500">Subtotal</span>
                           <span>₹{(
-                            [...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((curr.price || 0) * (curr.quantity || 1)), 0) + 
+                            [...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((Number(curr.price) || 0) * (Number(curr.quantity) || 1)), 0) + 
                             Number(form.watch("laborCharge") || 0) -
                             Number(form.watch("discount") || 0)
                           ).toLocaleString()}</span>
@@ -1451,7 +1451,7 @@ export default function AddJobPage() {
                         <div className="flex justify-between items-center text-sm font-medium text-slate-500">
                           <span>GST ({form.watch("gst")}%)</span>
                           <span>₹{(() => {
-                            const subtotal = [...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((curr.price || 0) * (curr.quantity || 1)), 0) + 
+                            const subtotal = [...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((Number(curr.price) || 0) * (Number(curr.quantity) || 1)), 0) + 
                                             Number(form.watch("laborCharge") || 0) - 
                                             Number(form.watch("discount") || 0);
                             const gstRate = Number(form.watch("gst") || 0);
@@ -1465,7 +1465,7 @@ export default function AddJobPage() {
                           <span className="text-base font-bold text-slate-900">Total Estimated Cost</span>
                           <span className="text-xl font-black text-red-600">
                             ₹{(
-                              [...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((curr.price || 0) * (curr.quantity || 1)), 0) + 
+                              [...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((Number(curr.price) || 0) * (Number(curr.quantity) || 1)), 0) + 
                               Number(form.watch("laborCharge") || 0) - 
                               Number(form.watch("discount") || 0)
                             ).toLocaleString()}
@@ -1627,7 +1627,7 @@ export default function AddJobPage() {
                     <FileText className="h-4 w-4" />
                     <span className="text-sm font-bold uppercase tracking-wider">Total Invoice Amount:</span>
                     <span className="text-lg font-black tracking-tight">₹{Math.round(
-                      ([...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((curr.price || 0) * (curr.quantity || 1)), 0) + 
+                      ([...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((Number(curr.price) || 0) * (Number(curr.quantity) || 1)), 0) + 
                       Number(form.watch("laborCharge") || 0) - 
                       Number(form.watch("discount") || 0))
                     ).toLocaleString()}</span>
@@ -1641,12 +1641,12 @@ export default function AddJobPage() {
                       <span className="text-[10px] font-bold text-slate-400 uppercase block leading-none mb-1">Remaining</span>
                       <span className={`text-sm font-bold ${
                         Math.round(
-                          ([...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((curr.price || 0) * (curr.quantity || 1)), 0) + 
+                          ([...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((Number(curr.price) || 0) * (Number(curr.quantity) || 1)), 0) + 
                           Number(form.watch("laborCharge") || 0) - 
                           Number(form.watch("discount") || 0))
                         ) - payments.reduce((acc, p) => acc + Number(p.amount || 0), 0) > 0 ? "text-red-600" : "text-green-600"
                       }`}>₹{Math.max(0, Math.round(
-                        ([...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((curr.price || 0) * (curr.quantity || 1)), 0) + 
+                        ([...form.watch("services"), ...form.watch("ppfs"), ...form.watch("accessories")].reduce((acc, curr) => acc + ((Number(curr.price) || 0) * (Number(curr.quantity) || 1)), 0) + 
                         Number(form.watch("laborCharge") || 0) - 
                         Number(form.watch("discount") || 0))
                       ) - payments.reduce((acc, p) => acc + Number(p.amount || 0), 0)).toLocaleString()}</span>

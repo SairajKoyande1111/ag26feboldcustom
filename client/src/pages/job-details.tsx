@@ -271,7 +271,7 @@ export default function JobDetailsPage() {
                         </TableCell>
                         <TableCell className="text-sm font-semibold text-slate-800">{(accessory as any).name || (accessory as any).accessoryName || "Unnamed Accessory"}</TableCell>
                         <TableCell className="text-center text-sm text-slate-600">{accessory.quantity || 1}</TableCell>
-                        <TableCell className="text-right pr-6 text-sm font-bold text-slate-900">₹{(accessory.price || 0).toLocaleString()}</TableCell>
+                        <TableCell className="text-right pr-6 text-sm font-bold text-slate-900">₹{((accessory.price || 0) * (accessory.quantity || 1)).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -332,7 +332,7 @@ export default function JobDetailsPage() {
                           ...(job.services || []),
                           ...(job.ppfs || []),
                           ...(job.accessories || [])
-                        ].reduce((acc, curr) => acc + (curr.price || 0), 0);
+                        ].reduce((acc, curr) => acc + (curr.price || 0) * (curr.quantity || 1), 0);
                         const subtotal = itemsTotal + (job.laborCharge || 0) - (job.discount || 0);
                         return `₹${subtotal.toLocaleString()}`;
                       })()}
