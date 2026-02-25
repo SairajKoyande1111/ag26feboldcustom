@@ -815,13 +815,20 @@ export class MongoStorage implements IStorage {
         const itemsSubtotal = bizItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
         
         let discountAmount = 0;
-        const businesses = new Set([...(j.services || []), ...(j.ppfs || []), ...(j.accessories || [])].map(item => item.business));
-        if ((j as any).laborBusiness) businesses.add((j as any).laborBusiness);
-        
-        if (businesses.size > 1) {
-          discountAmount = biz === "Auto Gamma" ? (j.autoGammaDiscount || 0) : (j.agnxDiscount || 0);
+        const autoGammaDiscount = (j as any).autoGammaDiscount || 0;
+        const agnxDiscount = (j as any).agnxDiscount || 0;
+        const totalDiscount = j.discount || 0;
+
+        const bizCount = [
+          ...(j.services || []), 
+          ...(j.ppfs || []), 
+          ...(j.accessories || [])
+        ].reduce((acc, item) => acc.add((item as any).business), new Set()).size;
+
+        if (biz === "Auto Gamma") {
+          discountAmount = autoGammaDiscount || (bizCount === 1 ? totalDiscount : 0);
         } else {
-          discountAmount = j.discount || 0;
+          discountAmount = agnxDiscount || (bizCount === 1 ? totalDiscount : 0);
         }
 
         const subtotalAfterDiscount = itemsSubtotal - discountAmount;
@@ -1139,13 +1146,20 @@ export class MongoStorage implements IStorage {
         const itemsSubtotal = bizItems.reduce((acc, item) => acc + (item.price * (item.quantity || 1)), 0);
         
         let discountAmount = 0;
-        const businesses = new Set([...(j.services || []), ...(j.ppfs || []), ...(j.accessories || [])].map(item => item.business));
-        if ((j as any).laborBusiness) businesses.add((j as any).laborBusiness);
-        
-        if (businesses.size > 1) {
-          discountAmount = biz === "Auto Gamma" ? (j.autoGammaDiscount || 0) : (j.agnxDiscount || 0);
+        const autoGammaDiscount = (j as any).autoGammaDiscount || 0;
+        const agnxDiscount = (j as any).agnxDiscount || 0;
+        const totalDiscount = j.discount || 0;
+
+        const bizCount = [
+          ...(j.services || []), 
+          ...(j.ppfs || []), 
+          ...(j.accessories || [])
+        ].reduce((acc, item) => acc.add((item as any).business), new Set()).size;
+
+        if (biz === "Auto Gamma") {
+          discountAmount = autoGammaDiscount || (bizCount === 1 ? totalDiscount : 0);
         } else {
-          discountAmount = j.discount || 0;
+          discountAmount = agnxDiscount || (bizCount === 1 ? totalDiscount : 0);
         }
 
         const subtotalAfterDiscount = itemsSubtotal - discountAmount;

@@ -358,6 +358,15 @@ export default function AddJobPage() {
   const [laborBusiness, setLaborBusiness] = useState<string>("Auto Gamma");
   const [discountBusiness, setDiscountBusiness] = useState<string>("Auto Gamma");
   const [discountSplit, setDiscountSplit] = useState<{ autoGamma: number; agnx: number }>({ autoGamma: 0, agnx: 0 });
+  const [discountType, setDiscountType] = useState<"Total" | "Split">("Total");
+
+  // Update discount split when total discount changes if in Total mode
+  useEffect(() => {
+    if (discountType === "Total") {
+      const totalDiscount = form.getValues("discount");
+      setDiscountSplit({ autoGamma: totalDiscount, agnx: 0 });
+    }
+  }, [form.watch("discount"), discountType]);
   const [businessAssignments, setBusinessAssignments] = useState<Record<string, string>>({});
   const [pendingFormData, setPendingFormData] = useState<any>(null);
   const [markAsPaid, setMarkAsPaid] = useState(false);
@@ -666,6 +675,10 @@ export default function AddJobPage() {
         ...data,
         estimatedCost: totalEstimatedCost,
         status: jobToEdit?.status || "Pending",
+        autoGammaDiscount: discountSplit.autoGamma,
+        agnxDiscount: discountSplit.agnx,
+        discount: (discountSplit.autoGamma || 0) + (discountSplit.agnx || 0),
+        laborBusiness,
         accessories: data.accessories.map(a => ({
           ...a,
           quantity: Number(a.quantity || 1),
