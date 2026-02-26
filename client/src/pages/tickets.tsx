@@ -13,12 +13,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -27,9 +33,12 @@ import {
   MoreVertical,
   Pencil,
   Trash2,
-  Ticket as TicketIcon
+  Ticket as TicketIcon,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +56,7 @@ export default function TicketsPage() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isCustomerSelectOpen, setIsCustomerSelectOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState<Ticket | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
   const [note, setNote] = useState("");
@@ -61,6 +71,10 @@ export default function TicketsPage() {
     staleTime: 0,
     refetchOnMount: "always"
   });
+
+  const selectedCustomer = useMemo(() => 
+    customers.find(c => c.id === selectedCustomerId),
+  [customers, selectedCustomerId]);
 
   // Mutations
   const createMutation = useMutation({
@@ -106,18 +120,17 @@ export default function TicketsPage() {
   };
 
   const handleCreateTicket = () => {
-    const customer = customers.find(c => c.id === selectedCustomerId);
-    if (!customer || !note) return;
+    if (!selectedCustomer || !note) return;
 
     if (editingTicket) {
       updateMutation.mutate({
         id: editingTicket.id!,
-        data: { customerId: selectedCustomerId, customerName: customer.name, note }
+        data: { customerId: selectedCustomerId, customerName: selectedCustomer.name, note }
       });
     } else {
       createMutation.mutate({
         customerId: selectedCustomerId,
-        customerName: customer.name,
+        customerName: selectedCustomer.name,
         note
       });
     }
@@ -173,37 +186,54 @@ export default function TicketsPage() {
                   <DialogTitle>{editingTicket ? "Edit Ticket" : "Create New Ticket"}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
+                  <div className="space-y-2 flex flex-col">
                     <label className="text-sm font-medium">Customer</label>
-                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a customer" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px]">
-                        {isLoadingCustomers ? (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            Loading customers...
-                          </div>
-                        ) : customersError ? (
-                          <div className="p-2 text-sm text-red-500 text-center">
-                            Failed to load customers
-                          </div>
-                        ) : customers.length === 0 ? (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            No customers found. Create a customer first.
-                          </div>
-                        ) : (
-                          customers.map((customer) => (
-                            <SelectItem key={customer.id} value={customer.id!}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{customer.name}</span>
-                                <span className="text-xs text-muted-foreground">{customer.phone}</span>
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={isCustomerSelectOpen} onOpenChange={setIsCustomerSelectOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={isCustomerSelectOpen}
+                          className="justify-between"
+                        >
+                          {selectedCustomer 
+                            ? `${selectedCustomer.name} (${selectedCustomer.phone})`
+                            : "Select a customer..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[375px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Search customer by name or phone..." />
+                          <CommandList>
+                            <CommandEmpty>No customer found.</CommandEmpty>
+                            <CommandGroup heading="Latest Customers">
+                              {customers.map((customer) => (
+                                <CommandItem
+                                  key={customer.id}
+                                  value={`${customer.name} ${customer.phone}`}
+                                  onSelect={() => {
+                                    setSelectedCustomerId(customer.id);
+                                    setIsCustomerSelectOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedCustomerId === customer.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span>{customer.name}</span>
+                                    <span className="text-xs text-muted-foreground">{customer.phone}</span>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Note</label>
@@ -220,7 +250,7 @@ export default function TicketsPage() {
                   <Button 
                     className="bg-red-500 hover:bg-red-600 text-white"
                     onClick={handleCreateTicket}
-                    disabled={createMutation.isPending || updateMutation.isPending}
+                    disabled={createMutation.isPending || updateMutation.isPending || !selectedCustomerId}
                   >
                     {editingTicket ? "Update Ticket" : "Create Ticket"}
                   </Button>

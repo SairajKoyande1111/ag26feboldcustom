@@ -32,6 +32,7 @@ export default function OldCustomersPage() {
     name: "",
     number: "",
     vehicleNumber: "",
+    notes: "",
   });
 
   const limit = 10;
@@ -54,7 +55,7 @@ export default function OldCustomersPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/old-customers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       setIsFormOpen(false);
-      setFormData({ name: "", number: "", vehicleNumber: "" });
+      setFormData({ name: "", number: "", vehicleNumber: "", notes: "" });
       toast({ title: "Customer added successfully" });
     },
   });
@@ -105,6 +106,14 @@ export default function OldCustomersPage() {
                     placeholder="Enter vehicle number"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Notes (Optional)</label>
+                  <Input 
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Enter notes (optional)"
+                  />
+                </div>
                 <Button 
                   className="w-full bg-red-500 hover:bg-red-600 text-white"
                   onClick={() => createMutation.mutate(formData)}
@@ -125,7 +134,7 @@ export default function OldCustomersPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Number</TableHead>
                   <TableHead>Vehicle Number</TableHead>
-                  <TableHead>Date Added</TableHead>
+                  <TableHead>Notes</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,9 +156,7 @@ export default function OldCustomersPage() {
                       <TableCell className="font-medium">{customer.name}</TableCell>
                       <TableCell>{customer.number}</TableCell>
                       <TableCell>{customer.vehicleNumber}</TableCell>
-                      <TableCell>
-                        {new Date(customer.createdAt!).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{customer.notes || "NA"}</TableCell>
                     </TableRow>
                   ))
                 )}

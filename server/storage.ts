@@ -230,6 +230,7 @@ const oldCustomerMongoSchema = new mongoose.Schema({
   name: { type: String, required: true },
   number: { type: String, required: true },
   vehicleNumber: { type: String, required: true },
+  notes: { type: String, default: "NA" },
   createdAt: { type: String, required: true }
 });
 
@@ -736,38 +737,39 @@ export class MongoStorage implements IStorage {
 
   async getCustomers(): Promise<any[]> {
     try {
-      // Collect all unique customers from job cards and old customers
-      const jobCards = await JobCardModel.find({}, 'customerName phoneNumber emailAddress');
-      const oldCustomers = await OldCustomerModel.find({}, 'name number');
+      // Fetch latest job cards and old customers
+      const [jobCards, oldCustomers] = await Promise.all([
+        JobCardModel.find({}, 'customerName phoneNumber emailAddress date').sort({ date: -1 }).limit(100),
+        OldCustomerModel.find({}, 'name number createdAt').sort({ createdAt: -1 }).limit(100)
+      ]);
 
       const customersMap = new Map();
 
-      jobCards.forEach(jc => {
-        const phone = jc.phoneNumber;
-        if (phone && !customersMap.has(phone)) {
-          customersMap.set(phone, {
-            id: jc._id.toString(),
-            name: jc.customerName,
-            phone: phone,
-            email: jc.emailAddress
-          });
+      // Merge and sort by latest activity
+      const allEntries = [
+        ...jobCards.map(jc => ({
+          id: jc._id.toString(),
+          name: jc.customerName,
+          phone: jc.phoneNumber,
+          email: jc.emailAddress,
+          timestamp: jc.date
+        })),
+        ...oldCustomers.map(oc => ({
+          id: oc._id.toString(),
+          name: oc.name,
+          phone: oc.number,
+          email: "",
+          timestamp: oc.createdAt
+        }))
+      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      allEntries.forEach(entry => {
+        if (!customersMap.has(entry.phone)) {
+          customersMap.set(entry.phone, entry);
         }
       });
 
-      oldCustomers.forEach(oc => {
-        const phone = oc.number;
-        if (phone && !customersMap.has(phone)) {
-          customersMap.set(phone, {
-            id: oc._id.toString(),
-            name: oc.name,
-            phone: phone,
-            email: ""
-          });
-        }
-      });
-
-      const result = Array.from(customersMap.values());
-      return result;
+      return Array.from(customersMap.values());
     } catch (error) {
       console.error("Error in getCustomers:", error);
       throw error;

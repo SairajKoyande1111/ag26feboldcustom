@@ -192,9 +192,9 @@ export const jobCardSchema = z.object({
   referralSource: z.string(),
   referrerName: z.string().optional(),
   referrerPhone: z.string().optional(),
-  make: { type: String, required: true },
-  model: { type: String, required: true },
-  year: { type: String, required: true },
+  make: z.string(),
+  model: z.string(),
+  year: z.string(),
   licensePlate: z.string(),
   vehicleType: z.string().optional(),
   services: z.array(jobCardItemSchema.extend({ technician: z.string().optional() })).default([]),
@@ -332,6 +332,7 @@ export const oldCustomerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   number: z.string().min(10, "Number must be at least 10 digits"),
   vehicleNumber: z.string().min(1, "Vehicle number is required"),
+  notes: z.string().optional().default("NA"),
   createdAt: z.string().default(() => new Date().toISOString()),
 });
 
