@@ -192,9 +192,9 @@ export const jobCardSchema = z.object({
   referralSource: z.string(),
   referrerName: z.string().optional(),
   referrerPhone: z.string().optional(),
-  make: z.string(),
-  model: z.string(),
-  year: z.string(),
+  make: { type: String, required: true },
+  model: { type: String, required: true },
+  year: { type: String, required: true },
   licensePlate: z.string(),
   vehicleType: z.string().optional(),
   services: z.array(jobCardItemSchema.extend({ technician: z.string().optional() })).default([]),
@@ -285,6 +285,7 @@ export const ticketSchema = z.object({
 export type Ticket = z.infer<typeof ticketSchema>;
 export const insertTicketSchema = ticketSchema.omit({ id: true, createdAt: true });
 export type InsertTicket = z.infer<typeof insertTicketSchema>;
+
 export const inquiryStatusSchema = z.enum(["NEW", "FOLLOW_UP", "CONVERTED", "LOST"]);
 export type InquiryStatus = z.infer<typeof inquiryStatusSchema>;
 
@@ -324,3 +325,16 @@ export const inquirySchema = z.object({
 export type Inquiry = z.infer<typeof inquirySchema>;
 export const insertInquirySchema = inquirySchema.omit({ id: true, inquiryId: true, status: true, createdAt: true });
 export type InsertInquiry = z.infer<typeof insertInquirySchema>;
+
+// Old Customer Schemas
+export const oldCustomerSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  number: z.string().min(10, "Number must be at least 10 digits"),
+  vehicleNumber: z.string().min(1, "Vehicle number is required"),
+  createdAt: z.string().default(() => new Date().toISOString()),
+});
+
+export type OldCustomer = z.infer<typeof oldCustomerSchema>;
+export const insertOldCustomerSchema = oldCustomerSchema.omit({ id: true, createdAt: true });
+export type InsertOldCustomer = z.infer<typeof insertOldCustomerSchema>;

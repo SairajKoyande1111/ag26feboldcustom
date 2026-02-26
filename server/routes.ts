@@ -391,6 +391,21 @@ app.use((req, res, next) => {
     res.sendStatus(204);
   });
 
+  // Old Customers
+  app.get("/api/old-customers", async (req, res) => {
+    if (!(req.session as any).userId) return res.sendStatus(401);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const data = await storage.getOldCustomers(page, limit);
+    res.json(data);
+  });
+
+  app.post("/api/old-customers", async (req, res) => {
+    if (!(req.session as any).userId) return res.sendStatus(401);
+    const customer = await storage.createOldCustomer(req.body);
+    res.json(customer);
+  });
+
   app.get("/api/job-cards/:id", async (req, res) => {
     const job = await storage.getJobCard(req.params.id);
     if (!job) return res.status(404).json({ message: "Job card not found" });

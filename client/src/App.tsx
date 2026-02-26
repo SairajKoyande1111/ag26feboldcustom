@@ -16,6 +16,7 @@ import InvoicePage from "@/pages/invoice";
 import CustomersPage from "@/pages/customers";
 import CustomerDetailPage from "@/pages/customer-detail";
 import TicketsPage from "@/pages/tickets";
+import OldCustomersPage from "@/pages/old-customers";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 
@@ -85,6 +86,7 @@ function Router() {
       <Route path="/technicians"><ProtectedRoute component={TechniciansPage} /></Route>
       <Route path="/appointments"><ProtectedRoute component={AppointmentsPage} /></Route>
       <Route path="/tickets"><ProtectedRoute component={TicketsPage} /></Route>
+      <Route path="/old-customers"><ProtectedRoute component={OldCustomersPage} /></Route>
       <Route path="/masters">
         <ProtectedRoute component={MastersPage} />
       </Route>

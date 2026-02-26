@@ -27,6 +27,7 @@ const navItems = [
   { icon: Wrench, label: "Technicians", href: "/technicians" },
   { icon: Calendar, label: "Appointment", href: "/appointments" },
   { icon: Ticket, label: "Tickets", href: "/tickets" },
+  { icon: Database, label: "Old Customers", href: "/old-customers" },
   { icon: Database, label: "Masters", href: "/masters" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];

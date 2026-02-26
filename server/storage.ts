@@ -226,6 +226,15 @@ const ticketMongoSchema = new mongoose.Schema({
 
 export const TicketModel = mongoose.model("Ticket", ticketMongoSchema);
 
+const oldCustomerMongoSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  number: { type: String, required: true },
+  vehicleNumber: { type: String, required: true },
+  createdAt: { type: String, required: true }
+});
+
+export const OldCustomerModel = mongoose.model("OldCustomer", oldCustomerMongoSchema);
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -296,6 +305,10 @@ export interface IStorage {
   createJobCard(jobCard: InsertJobCard): Promise<JobCard>;
   updateJobCard(id: string, jobCard: Partial<JobCard>): Promise<JobCard | undefined>;
   deleteJobCard(id: string): Promise<boolean>;
+
+  // Old Customers
+  getOldCustomers(page: number, limit: number): Promise<{ customers: any[], total: number }>;
+  createOldCustomer(customer: any): Promise<any>;
 
   sessionStore: session.Store;
 }
@@ -723,8 +736,9 @@ export class MongoStorage implements IStorage {
 
   async getCustomers(): Promise<any[]> {
     try {
-      // Collect all unique customers from job cards only (as per user request to only show "actual" customers)
+      // Collect all unique customers from job cards and old customers
       const jobCards = await JobCardModel.find({}, 'customerName phoneNumber emailAddress');
+      const oldCustomers = await OldCustomerModel.find({}, 'name number');
 
       const customersMap = new Map();
 
@@ -740,12 +754,45 @@ export class MongoStorage implements IStorage {
         }
       });
 
+      oldCustomers.forEach(oc => {
+        const phone = oc.number;
+        if (phone && !customersMap.has(phone)) {
+          customersMap.set(phone, {
+            id: oc._id.toString(),
+            name: oc.name,
+            phone: phone,
+            email: ""
+          });
+        }
+      });
+
       const result = Array.from(customersMap.values());
       return result;
     } catch (error) {
       console.error("Error in getCustomers:", error);
       throw error;
     }
+  }
+
+  async getOldCustomers(page: number, limit: number): Promise<{ customers: any[], total: number }> {
+    const skip = (page - 1) * limit;
+    const [customers, total] = await Promise.all([
+      OldCustomerModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+      OldCustomerModel.countDocuments()
+    ]);
+    return {
+      customers: customers.map(c => ({ ...c.toObject(), id: c._id.toString() })),
+      total
+    };
+  }
+
+  async createOldCustomer(customer: any): Promise<any> {
+    const oc = new OldCustomerModel({
+      ...customer,
+      createdAt: new Date().toISOString()
+    });
+    await oc.save();
+    return { ...oc.toObject(), id: oc._id.toString() };
   }
 
   async createJobCard(jobCard: InsertJobCard): Promise<JobCard> {
