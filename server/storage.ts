@@ -805,7 +805,7 @@ export class MongoStorage implements IStorage {
     const j = new JobCardModel({
       ...jobCard,
       jobNo,
-      date: new Date().toISOString()
+      date: jobCard.date || new Date().toISOString()
     });
     await j.save();
 

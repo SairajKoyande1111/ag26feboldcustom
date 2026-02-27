@@ -60,7 +60,7 @@ import {
     gst: z.coerce.number().default(0),
     serviceNotes: z.string().optional().or(z.literal("")),
     status: z.string().optional(),
-    date: z.string().optional(),
+    date: z.string().min(1, "Job date is required"),
     estimatedCost: z.number().optional(),
     technician: z.string().optional(),
   });
@@ -282,6 +282,7 @@ export default function AddJobPage() {
         discount: jobToEdit.discount || 0,
         gst: jobToEdit.gst ?? 0,
         serviceNotes: jobToEdit.serviceNotes || "",
+        date: jobToEdit.date ? new Date(jobToEdit.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       });
     } else if (!jobId && !prefillPhone) {
       // Only clear form if there's no prefillPhone (prefillPhone is handled by its own useEffect)
@@ -305,6 +306,7 @@ export default function AddJobPage() {
         discount: 0,
         gst: 0,
         serviceNotes: "",
+        date: new Date().toISOString().split("T")[0],
       });
     }
   }, [jobToEdit, jobId, prefillPhone, form.reset]);
@@ -920,7 +922,28 @@ export default function AddJobPage() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold text-slate-700">Job Date *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            {...field} 
+                            className={`h-11 ${form.formState.errors.date ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`}
+                          />
+                        </FormControl>
+                        {form.formState.errors.date && (
+                          <p className="text-xs font-bold text-red-600 mt-1">
+                            {form.formState.errors.date.message}
+                          </p>
+                        )}
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={form.control}
                     name="referralSource"
