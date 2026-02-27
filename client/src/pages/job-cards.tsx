@@ -99,7 +99,7 @@ export default function JobCardsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      {format(new Date(job.date), "MMM dd, yyyy • HH:mm")}
+                      {format(new Date(job.date), "MMM dd, yyyy")}
                     </div>
                     {job.vehicleType && (
                       <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100/50 px-2 py-1 rounded w-fit">

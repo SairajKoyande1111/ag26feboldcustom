@@ -212,7 +212,7 @@ export default function JobDetailsPage() {
                 {getStatusBadge(job.status)}
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Created on {format(new Date(job.date), "MMMM dd, yyyy • HH:mm")}
+                Created on {format(new Date(job.date), "MMMM dd, yyyy")}
               </p>
             </div>
           </div>
@@ -479,12 +479,12 @@ export default function JobDetailsPage() {
                   <div className="relative pl-7">
                     <div className="absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-red-600 shadow-sm z-10" />
                     <p className="text-xs font-bold text-slate-800">Created</p>
-                    <p className="text-[10px] text-muted-foreground">{format(new Date(job.date), "MMM dd, yyyy • HH:mm")}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(new Date(job.date), "MMM dd, yyyy")}</p>
                   </div>
                   <div className="relative pl-7">
                     <div className="absolute left-0 top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-blue-500 shadow-sm z-10" />
                     <p className="text-xs font-bold text-slate-800">Last Updated</p>
-                    <p className="text-[10px] text-muted-foreground">{format(new Date(job.date), "MMM dd, yyyy • HH:mm")}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(new Date(job.date), "MMM dd, yyyy")}</p>
                   </div>
                 </div>
               </CardContent>
