@@ -141,7 +141,7 @@ export default function JobCardsPage() {
                         <p className="text-xs text-muted-foreground line-clamp-2">
                           {job.services.length + job.ppfs.length + job.accessories.length > 1 
                             ? `+ ${job.services.length + job.ppfs.length + job.accessories.length - 1} more items`
-                            : "Standard service procedures applied"}
+                            : ""}
                         </p>
                       </div>
                     </div>

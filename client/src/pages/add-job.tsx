@@ -41,16 +41,26 @@ import {
 } from "lucide-react";
 
   const jobCardSchema = z.object({
-    customerName: z.string().min(1, "Customer name is required"),
-    phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
-    emailAddress: z.string().optional().or(z.literal("")),
+    customerName: z.string().min(1, "Customer name is required").transform(val => 
+      val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
+    ),
+    phoneNumber: z.string().length(10, "Phone number must be exactly 10 digits").regex(/^\d+$/, "Phone number must contain only digits"),
+    emailAddress: z.string().email("Invalid email address").optional().or(z.literal("")),
     referralSource: z.string().min(1, "Referral source is required"),
     referrerName: z.string().optional().or(z.literal("")),
     referrerPhone: z.string().optional().or(z.literal("")),
-    make: z.string().min(1, "Vehicle make is required"),
-    model: z.string().min(1, "Vehicle model is required"),
-    year: z.string().min(1, "Vehicle year is required"),
-    licensePlate: z.string().min(1, "License plate is required"),
+    make: z.string().min(1, "Vehicle make is required").transform(val => 
+      val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
+    ),
+    model: z.string().min(1, "Vehicle model is required").transform(val => 
+      val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ')
+    ),
+    year: z.string().min(1, "Vehicle year is required").regex(/^\d{4}$/, "Year must be a 4-digit number"),
+    licensePlate: z.string().min(1, "License plate is required").refine(val => {
+      const standard = /^[A-Z]{2}\s\d{2}\s[A-Z]{2}\s\d{4}$/;
+      const bharat = /^\d{2}\sBH\s\d{4}\s[A-Z]{2}$/;
+      return standard.test(val) || bharat.test(val);
+    }, "Format: AA 00 AA 0000 or YY BH 0000 AA"),
     vehicleType: z.string().optional(),
     services: z.array(z.any()).default([]),
     ppfs: z.array(z.any()).default([]),
@@ -876,6 +886,11 @@ export default function AddJobPage() {
                           <Input 
                             placeholder="John Doe" 
                             {...field} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const transformed = val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                              field.onChange(transformed);
+                            }}
                             className={`h-11 ${form.formState.errors.customerName ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`} 
                           />
                         </FormControl>
@@ -1038,6 +1053,11 @@ export default function AddJobPage() {
                           <Input 
                             placeholder="e.g. Toyota" 
                             {...field} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const transformed = val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                              field.onChange(transformed);
+                            }}
                             className={`h-11 ${form.formState.errors.make ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`} 
                           />
                         </FormControl>
@@ -1059,6 +1079,11 @@ export default function AddJobPage() {
                           <Input 
                             placeholder="e.g. Camry" 
                             {...field} 
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const transformed = val.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                              field.onChange(transformed);
+                            }}
                             className={`h-11 ${form.formState.errors.model ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`} 
                           />
                         </FormControl>
@@ -1106,6 +1131,10 @@ export default function AddJobPage() {
                           <Input 
                             placeholder="ABC-1234" 
                             {...field} 
+                            onChange={(e) => {
+                              const val = e.target.value.toUpperCase();
+                              field.onChange(val);
+                            }}
                             className={`h-11 ${form.formState.errors.licensePlate ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`} 
                           />
                         </FormControl>
