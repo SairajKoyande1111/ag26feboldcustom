@@ -912,6 +912,11 @@ export default function AddJobPage() {
                           <Input 
                             placeholder="+1 555-0123" 
                             {...field} 
+                            maxLength={10}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, "");
+                              field.onChange(value);
+                            }}
                             className={`h-11 ${form.formState.errors.phoneNumber ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`} 
                           />
                         </FormControl>
@@ -1106,6 +1111,7 @@ export default function AddJobPage() {
                             placeholder="2024" 
                             {...field}
                             inputMode="numeric"
+                            maxLength={4}
                             onChange={(e) => {
                               const value = e.target.value.replace(/\D/g, '');
                               field.onChange(value);
@@ -1129,12 +1135,32 @@ export default function AddJobPage() {
                         <FormLabel className="text-sm font-semibold text-slate-700">License Plate *</FormLabel>
                         <FormControl>
                           <Input 
-                            placeholder="ABC-1234" 
+                            placeholder="AA 00 AA 0000 / YY BH 0000 AA" 
                             {...field} 
                             onChange={(e) => {
-                              const val = e.target.value.toUpperCase();
-                              field.onChange(val);
+                              let val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                              
+                              // Check if it's Bharat Series (starts with 2 digits followed by BH)
+                              const isBH = val.length >= 4 && /^\d{2}BH/.test(val);
+                              
+                              let formatted = "";
+                              if (isBH) {
+                                // YY BH 0000 AA
+                                if (val.length > 0) formatted += val.substring(0, 2);
+                                if (val.length > 2) formatted += " " + val.substring(2, 4);
+                                if (val.length > 4) formatted += " " + val.substring(4, 8);
+                                if (val.length > 8) formatted += " " + val.substring(8, 10);
+                                field.onChange(formatted.trim());
+                              } else {
+                                // AA 00 AA 0000
+                                if (val.length > 0) formatted += val.substring(0, 2);
+                                if (val.length > 2) formatted += " " + val.substring(2, 4);
+                                if (val.length > 4) formatted += " " + val.substring(4, 6);
+                                if (val.length > 6) formatted += " " + val.substring(6, 10);
+                                field.onChange(formatted.trim());
+                              }
                             }}
+                            maxLength={13} // Max length for YY BH 0000 AA is 13 with spaces
                             className={`h-11 ${form.formState.errors.licensePlate ? "border-red-500 ring-1 ring-red-500 bg-red-50" : ""}`} 
                           />
                         </FormControl>
