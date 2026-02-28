@@ -397,11 +397,19 @@ export default function AddJobPage() {
 
   const createAccessoryMutation = useMutation({
     mutationFn: async (data: { category: string, name: string, price: number, quantity: number }) => {
+      // First ensure the category exists in the AccessoryCategory collection
+      try {
+        await apiRequest("POST", "/api/masters/accessory-categories", { name: data.category });
+      } catch (e) {
+        // Ignore if category already exists
+        console.log("Category might already exist or failed to create:", e);
+      }
       const res = await apiRequest("POST", "/api/masters/accessories", data);
       return res.json();
     },
     onSuccess: (newItem) => {
       queryClient.invalidateQueries({ queryKey: [api.masters.accessories.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.masters.accessories.categories.list.path] });
       toast({ title: "Accessory added successfully" });
       setShowAddAccessoryDialog(false);
       
