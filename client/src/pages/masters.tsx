@@ -59,13 +59,12 @@ export default function MastersPage() {
     queryKey: [api.masters.accessories.list.path],
   });
 
-  const { data: vehicleTypes = [] } = useQuery<VehicleType[]>({
-    queryKey: [api.masters.vehicleTypes.list.path],
-  });
-
   const { data: accessoryCategories = [] } = useQuery<AccessoryCategory[]>({
     queryKey: [api.masters.accessories.categories.list.path],
   });
+
+  const categoryNames = accessoryCategories.map(c => c.name);
+  const filteredAccessories = accessories.filter(a => categoryNames.includes(a.category));
 
   const deleteServiceMutation = useMutation({
     mutationFn: (id: string) => apiRequest("DELETE", `/api/masters/services/${id}`),
@@ -388,7 +387,7 @@ export default function MastersPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {accessories.map((accessory) => (
+              {filteredAccessories.map((accessory) => (
                 <Card key={accessory.id}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <div>
