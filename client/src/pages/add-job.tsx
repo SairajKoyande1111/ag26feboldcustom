@@ -736,9 +736,17 @@ export default function AddJobPage() {
       if (jobId && jobToEdit) {
         const businessFields = ["services", "ppfs", "accessories", "laborCharge", "discount", "gst"];
         const businessChanged = businessFields.some(field => {
-          const val1 = JSON.stringify(data[field as keyof typeof data]);
-          const val2 = JSON.stringify(jobToEdit[field as keyof any]);
-          return val1 !== val2;
+          const formVal = data[field as keyof typeof data];
+          const editVal = jobToEdit[field as keyof any];
+          
+          // Special handling for arrays to compare content
+          if (Array.isArray(formVal) && Array.isArray(editVal)) {
+            if (formVal.length !== editVal.length) return true;
+            return JSON.stringify(formVal.map(i => ({ ...i, business: undefined }))) !== 
+                   JSON.stringify(editVal.map(i => ({ ...i, business: undefined })));
+          }
+          
+          return Number(formVal) !== Number(editVal);
         });
 
         if (!businessChanged) {
@@ -1510,85 +1518,113 @@ export default function AddJobPage() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                   <div className="md:col-span-3 space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Accessory Category</label>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Search or add category..."
-                        value={categorySearch}
-                        onChange={(e) => setCategorySearch(e.target.value)}
-                        className="h-11"
-                      />
-                      <Select value={selectedAccessoryCategory} onValueChange={setSelectedAccessoryCategory}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Select Category" />
-                        </SelectTrigger>
-                        <SelectContent>
+                    <Select 
+                      value={selectedAccessoryCategory} 
+                      onValueChange={(val) => {
+                        setSelectedAccessoryCategory(val);
+                        setSelectedAccessory("");
+                        setAccessorySearch("");
+                      }}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="p-2 border-b sticky top-0 bg-white z-10" onClick={(e) => e.stopPropagation()}>
+                          <div className="relative mb-2">
+                            <input
+                              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder="Search select category..."
+                              value={categorySearch}
+                              onChange={(e) => setCategorySearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <Button 
+                            variant="ghost" 
+                            className="w-full justify-start font-bold text-red-600 h-8 px-2 hover:text-red-700 hover:bg-red-50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (categorySearch.trim()) {
+                                createCategoryMutation.mutate(categorySearch.trim());
+                                setCategorySearch("");
+                              }
+                            }}
+                          >
+                            + Add New Category
+                          </Button>
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto">
                           {filteredCategories.map(cat => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
-                          {categorySearch && !filteredCategories.includes(categorySearch) && (
-                            <Button 
-                              variant="ghost" 
-                              className="w-full justify-start font-normal text-red-600"
-                              onClick={() => createCategoryMutation.mutate(categorySearch)}
-                            >
-                              + Add "{categorySearch}"
-                            </Button>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        </div>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="md:col-span-3 space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Accessory Name</label>
-                    <div className="space-y-2">
-                      <Input
-                        placeholder="Search or add accessory..."
-                        value={accessorySearch}
-                        onChange={(e) => setAccessorySearch(e.target.value)}
-                        className="h-11"
-                        disabled={!selectedAccessoryCategory}
-                      />
-                      <Select value={selectedAccessory} onValueChange={setSelectedAccessory} disabled={!selectedAccessoryCategory}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Select Accessory" />
-                        </SelectTrigger>
-                        <SelectContent>
+                    <Select 
+                      value={selectedAccessory} 
+                      onValueChange={setSelectedAccessory} 
+                      disabled={!selectedAccessoryCategory}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select Accessory" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="p-2 border-b sticky top-0 bg-white z-10" onClick={(e) => e.stopPropagation()}>
+                          <div className="relative mb-2">
+                            <input
+                              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                              placeholder="Search accessory..."
+                              value={accessorySearch}
+                              onChange={(e) => setAccessorySearch(e.target.value)}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          {accessorySearch.trim() && (
+                            <div className="space-y-2 p-2 bg-slate-50 rounded-md border border-slate-200">
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase">Add New Accessory</p>
+                              <div className="flex gap-2">
+                                <Input 
+                                  type="number" 
+                                  placeholder="Price" 
+                                  value={newAccessoryPrice}
+                                  onChange={(e) => setNewAccessoryPrice(e.target.value)}
+                                  className="h-8 text-xs"
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                />
+                                <Button 
+                                  size="sm"
+                                  className="h-8 bg-red-600 text-white text-xs px-2 whitespace-nowrap"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (accessorySearch.trim()) {
+                                      createAccessoryMutation.mutate({
+                                        category: selectedAccessoryCategory,
+                                        name: accessorySearch.trim(),
+                                        price: Number(newAccessoryPrice || 0),
+                                        quantity: 100
+                                      });
+                                      setNewAccessoryPrice("");
+                                      setAccessorySearch("");
+                                    }
+                                  }}
+                                >
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto">
                           {filteredAccessories.map(a => (
                             <SelectItem key={a.id} value={a.id!}>{a.name} (₹{a.price})</SelectItem>
                           ))}
-                          {accessorySearch && !filteredAccessories.some(a => a.name === accessorySearch) && (
-                            <div className="p-2 space-y-2 border-t" onClick={(e) => e.stopPropagation()}>
-                              <p className="text-xs font-bold text-muted-foreground uppercase">Add New Accessory</p>
-                              <Input 
-                                type="number" 
-                                placeholder="Price" 
-                                value={newAccessoryPrice}
-                                onChange={(e) => setNewAccessoryPrice(e.target.value)}
-                                className="h-9"
-                                onKeyDown={(e) => e.stopPropagation()}
-                              />
-                              <Button 
-                                size="sm"
-                                className="w-full bg-red-600 text-white"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const price = Number(newAccessoryPrice || 0);
-                                  createAccessoryMutation.mutate({
-                                    category: selectedAccessoryCategory,
-                                    name: accessorySearch,
-                                    price,
-                                    quantity: 100 // Default stock
-                                  });
-                                  setNewAccessoryPrice("");
-                                }}
-                              >
-                                Save Accessory
-                              </Button>
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                        </div>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="md:col-span-2 space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Quantity</label>
