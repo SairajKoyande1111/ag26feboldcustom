@@ -361,8 +361,42 @@ export default function AddJobPage() {
   const [selectedWarranty, setSelectedWarranty] = useState("");
   const [rollQty, setRollQty] = useState(0);
   const [selectedAccessoryCategory, setSelectedAccessoryCategory] = useState("");
+  const [accessorySearch, setAccessorySearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [newAccessoryPrice, setNewAccessoryPrice] = useState<string>("");
   const [selectedAccessory, setSelectedAccessory] = useState("");
   const [accessoryQty, setAccessoryQty] = useState(1);
+
+  const filteredCategories = Array.from(new Set(accessories.map(a => a.category))).filter(cat => 
+    cat.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  const filteredAccessories = accessories.filter(a => 
+    a.category === selectedAccessoryCategory && 
+    a.name.toLowerCase().includes(accessorySearch.toLowerCase())
+  );
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await apiRequest("POST", "/api/masters/accessory-categories", { name });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.masters.accessories.categories.list.path] });
+      toast({ title: "Category added successfully" });
+    }
+  });
+
+  const createAccessoryMutation = useMutation({
+    mutationFn: async (data: { category: string, name: string, price: number, quantity: number }) => {
+      const res = await apiRequest("POST", "/api/masters/accessories", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.masters.accessories.list.path] });
+      toast({ title: "Accessory added successfully" });
+    }
+  });
   const [showBusinessDialog, setShowBusinessDialog] = useState(false);
   const [servicesExpanded, setServicesExpanded] = useState(false);
   const [ppfExpanded, setPpfExpanded] = useState(false);
@@ -697,6 +731,22 @@ export default function AddJobPage() {
           accessoryId: a.accessoryId || a.id
         }))
       };
+
+      // If it's an update, check what changed
+      if (jobId && jobToEdit) {
+        const businessFields = ["services", "ppfs", "accessories", "laborCharge", "discount", "gst"];
+        const businessChanged = businessFields.some(field => {
+          const val1 = JSON.stringify(data[field as keyof typeof data]);
+          const val2 = JSON.stringify(jobToEdit[field as keyof any]);
+          return val1 !== val2;
+        });
+
+        if (!businessChanged) {
+          // Only basic details changed, skip popup
+          await createJobMutation.mutateAsync(payload);
+          return;
+        }
+      }
 
       if (!showBusinessDialog) {
         setPendingFormData(payload);
@@ -1460,56 +1510,105 @@ export default function AddJobPage() {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                   <div className="md:col-span-3 space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Accessory Category</label>
-                    <Select value={selectedAccessoryCategory} onValueChange={setSelectedAccessoryCategory}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Accessory Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from(new Set(accessories.map(a => a.category))).map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Search or add category..."
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        className="h-11"
+                      />
+                      <Select value={selectedAccessoryCategory} onValueChange={setSelectedAccessoryCategory}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredCategories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                          {categorySearch && !filteredCategories.includes(categorySearch) && (
+                            <Button 
+                              variant="ghost" 
+                              className="w-full justify-start font-normal text-red-600"
+                              onClick={() => createCategoryMutation.mutate(categorySearch)}
+                            >
+                              + Add "{categorySearch}"
+                            </Button>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="md:col-span-3 space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Accessory Name</label>
-                    <Select value={selectedAccessory} onValueChange={setSelectedAccessory} disabled={!selectedAccessoryCategory}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Accessory Name" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accessories.filter(a => a.category === selectedAccessoryCategory).map(a => (
-                          <SelectItem key={a.id} value={a.id!}>
-                            {a.name} (Stock: {(() => {
-                              const originalQty = jobToEdit?.accessories?.find((acc: any) => 
-                                (acc.accessoryId || acc.id || acc._id) === a.id
-                              )?.quantity || 0;
-                              const usedInCurrentJob = accessoryFields.reduce((sum, field: any) => {
-                                if (field.accessoryId === a.id) {
-                                  return sum + (Number(field.quantity) || 0);
-                                }
-                                return sum;
-                              }, 0);
-                              return (a.quantity || 0) + originalQty - usedInCurrentJob;
-                            })()})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Search or add accessory..."
+                        value={accessorySearch}
+                        onChange={(e) => setAccessorySearch(e.target.value)}
+                        className="h-11"
+                        disabled={!selectedAccessoryCategory}
+                      />
+                      <Select value={selectedAccessory} onValueChange={setSelectedAccessory} disabled={!selectedAccessoryCategory}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select Accessory" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredAccessories.map(a => (
+                            <SelectItem key={a.id} value={a.id!}>{a.name} (₹{a.price})</SelectItem>
+                          ))}
+                          {accessorySearch && !filteredAccessories.some(a => a.name === accessorySearch) && (
+                            <div className="p-2 space-y-2 border-t" onClick={(e) => e.stopPropagation()}>
+                              <p className="text-xs font-bold text-muted-foreground uppercase">Add New Accessory</p>
+                              <Input 
+                                type="number" 
+                                placeholder="Price" 
+                                value={newAccessoryPrice}
+                                onChange={(e) => setNewAccessoryPrice(e.target.value)}
+                                className="h-9"
+                                onKeyDown={(e) => e.stopPropagation()}
+                              />
+                              <Button 
+                                size="sm"
+                                className="w-full bg-red-600 text-white"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const price = Number(newAccessoryPrice || 0);
+                                  createAccessoryMutation.mutate({
+                                    category: selectedAccessoryCategory,
+                                    name: accessorySearch,
+                                    price,
+                                    quantity: 100 // Default stock
+                                  });
+                                  setNewAccessoryPrice("");
+                                }}
+                              >
+                                Save Accessory
+                              </Button>
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div className="md:col-span-3 space-y-1.5">
+                  <div className="md:col-span-2 space-y-1.5">
                     <label className="text-xs font-bold text-muted-foreground uppercase">Quantity</label>
                     <Input 
                       type="number" 
-                      min="1" 
                       value={accessoryQty} 
                       onChange={(e) => setAccessoryQty(parseInt(e.target.value) || 1)}
+                      min="1"
                       className="h-11"
                     />
                   </div>
-                  <div className="md:col-span-3">
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="text-xs font-bold text-muted-foreground uppercase">Price</label>
+                    <div className="h-11 flex items-center px-3 border rounded-md bg-slate-50 font-medium text-slate-700">
+                      ₹{selectedAccessory ? (accessories.find(a => a.id === selectedAccessory)?.price || 0) * accessoryQty : 0}
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
                     <Button type="button" onClick={handleAddAccessory} className="w-full h-11 bg-red-100 text-red-600 hover:bg-red-200 border-none font-semibold">
-                      Add Accessory
+                      Add Item
                     </Button>
                   </div>
                 </div>
