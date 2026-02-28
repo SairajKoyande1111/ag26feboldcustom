@@ -387,14 +387,40 @@ export default function AddJobPage() {
     }
   });
 
+  const [showAddAccessoryDialog, setShowAddAccessoryDialog] = useState(false);
+  const [newAccessoryData, setNewAccessoryData] = useState({
+    category: "",
+    name: "",
+    price: "",
+    quantity: "100"
+  });
+
   const createAccessoryMutation = useMutation({
     mutationFn: async (data: { category: string, name: string, price: number, quantity: number }) => {
       const res = await apiRequest("POST", "/api/masters/accessories", data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newItem) => {
       queryClient.invalidateQueries({ queryKey: [api.masters.accessories.list.path] });
       toast({ title: "Accessory added successfully" });
+      setShowAddAccessoryDialog(false);
+      
+      // Automatically select and add the newly created accessory to the job
+      setSelectedAccessoryCategory(newItem.category);
+      setSelectedAccessory(newItem.id);
+      
+      // Small delay to ensure state updates before adding
+      setTimeout(() => {
+        appendAccessory({
+          accessoryId: newItem.id,
+          id: newItem.id,
+          name: newItem.name,
+          price: newItem.price,
+          quantity: 1,
+          business: "Auto Gamma"
+        } as any);
+        setSelectedAccessory("");
+      }, 100);
     }
   });
   const [showBusinessDialog, setShowBusinessDialog] = useState(false);
@@ -742,15 +768,16 @@ export default function AddJobPage() {
           // Special handling for arrays to compare content
           if (Array.isArray(formVal) && Array.isArray(editVal)) {
             if (formVal.length !== editVal.length) return true;
+            // Compare items ignoring business assignment as that's what the popup sets
             return JSON.stringify(formVal.map(i => ({ ...i, business: undefined }))) !== 
                    JSON.stringify(editVal.map(i => ({ ...i, business: undefined })));
           }
           
-          return Number(formVal) !== Number(editVal);
+          return String(formVal) !== String(editVal);
         });
 
         if (!businessChanged) {
-          // Only basic details changed, skip popup
+          // Only basic details (Customer/Vehicle) changed, skip popup
           await createJobMutation.mutateAsync(payload);
           return;
         }
@@ -1545,10 +1572,8 @@ export default function AddJobPage() {
                             className="w-full justify-start font-bold text-red-600 h-8 px-2 hover:text-red-700 hover:bg-red-50"
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (categorySearch.trim()) {
-                                createCategoryMutation.mutate(categorySearch.trim());
-                                setCategorySearch("");
-                              }
+                              setNewAccessoryData(prev => ({ ...prev, category: categorySearch || "" }));
+                              setShowAddAccessoryDialog(true);
                             }}
                           >
                             + Add New Category
@@ -1870,6 +1895,72 @@ export default function AddJobPage() {
             </div>
           </form>
         </Form>
+
+        <Dialog open={showAddAccessoryDialog} onOpenChange={setShowAddAccessoryDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Accessory</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Category Name</label>
+                <Input 
+                  value={newAccessoryData.category}
+                  onChange={(e) => setNewAccessoryData(prev => ({ ...prev, category: e.target.value }))}
+                  placeholder="e.g. Interior"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold">Accessory Name</label>
+                <Input 
+                  value={newAccessoryData.name}
+                  onChange={(e) => setNewAccessoryData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g. Seat Cover"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Price (₹)</label>
+                  <Input 
+                    type="number"
+                    value={newAccessoryData.price}
+                    onChange={(e) => setNewAccessoryData(prev => ({ ...prev, price: e.target.value }))}
+                    placeholder="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold">Initial Stock Quantity</label>
+                  <Input 
+                    type="number"
+                    value={newAccessoryData.quantity}
+                    onChange={(e) => setNewAccessoryData(prev => ({ ...prev, quantity: e.target.value }))}
+                    placeholder="100"
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddAccessoryDialog(false)}>Cancel</Button>
+              <Button 
+                className="bg-red-600 hover:bg-red-700"
+                onClick={() => {
+                  if (!newAccessoryData.category || !newAccessoryData.name || !newAccessoryData.price) {
+                    toast({ title: "Error", description: "Please fill all required fields", variant: "destructive" });
+                    return;
+                  }
+                  createAccessoryMutation.mutate({
+                    category: newAccessoryData.category,
+                    name: newAccessoryData.name,
+                    price: Number(newAccessoryData.price),
+                    quantity: Number(newAccessoryData.quantity || 0)
+                  });
+                }}
+              >
+                Save & Add to Job
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showBusinessDialog} onOpenChange={setShowBusinessDialog}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
