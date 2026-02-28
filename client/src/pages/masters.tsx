@@ -59,6 +59,10 @@ export default function MastersPage() {
     queryKey: [api.masters.accessories.list.path],
   });
 
+  const { data: vehicleTypes = [] } = useQuery<VehicleType[]>({
+    queryKey: [api.masters.vehicleTypes.list.path],
+  });
+
   const { data: accessoryCategories = [] } = useQuery<AccessoryCategory[]>({
     queryKey: [api.masters.accessories.categories.list.path],
   });
